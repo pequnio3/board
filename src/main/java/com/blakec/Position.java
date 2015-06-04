@@ -1,10 +1,22 @@
 package com.blakec;
 
+import com.blakec.graph.Vertex;
+
 /**
  * Created by blakec on 6/2/15.
+ * <p/>
+ * <p/>
+ * Class that represents a position on a board in row, column coordinates.
+ * It is also a vertex and can be used in a graph.
  */
-public class Position {
+public class Position implements Vertex {
+    /**
+     * Row position.
+     */
     final int r;
+    /**
+     * Column position.
+     */
     final int c;
 
     public Position(final int r, final int c) {
@@ -20,6 +32,12 @@ public class Position {
         return c;
     }
 
+    /**
+     * Add a position to another.
+     *
+     * @param p position to add.
+     * @return new position with coordinates added.
+     */
     public Position add(Position p) {
         return new Position(r + p.getR(), c + p.getC());
     }

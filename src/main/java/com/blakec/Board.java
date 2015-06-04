@@ -9,38 +9,47 @@ import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Created by blakec on 6/2/15.
+ * <p/>
+ * Board that represents an M x N grid that a knight can move around.
  */
-public class Board {
+public class Board implements Vertex {
+    final Logger logger = Logger.getLogger(String.valueOf(Board.class));
+    /**
+     * The length of the short part of a knight's movement.
+     */
     final static int SHORT_MOVE_DISTANCE = 1;
+    /**
+     * The length of the long part of a knight's movement.
+     */
     final static int LONG_MOVE_DISTANCE = 2;
+    /**
+     * When dividing a board into sub boards, this is the size of the sub board's height and width
+     */
     final static int SUB_BOARD_SIZE = 8;
-    // moving from prev board to next board doesn't change a dimension's position
-    // this is the value that the prev linking positions dimension should be
-    final static int PREV_LINK_STAY_POSITION = SUB_BOARD_SIZE / 2;
-    // moving from prev board to next board increases change a dimension's position
-    // this is the value that the prev linking positions dimension should be
-    final static int PREV_LINK_INCREASE_POSITION = SUB_BOARD_SIZE - 1;
-    // moving from prev board to next board decreases change a dimension's position
-    // this is the value that the prev linking positions dimension should be
-    final static int PREV_LINK_DECREASE_POSITION = 0;
-    // moving from prev board to next board doesn't change a dimension's position
-    // this is the value that the next linking positions dimension should be
-    final static int NEXT_LINK_STAY_POSITION = SUB_BOARD_SIZE / 2 + LONG_MOVE_DISTANCE;
-    // moving from prev board to next board decreases change a dimension's position
-    // this is the value that the next linking positions dimension should be
-    final static int NEXT_LINK_INCREASE_POSITION = 0;
-    // moving from prev board to next board decreases change a dimension's position
-    // this is the value that the next linking positions dimension should be
-    final static int NEXT_LINK_DECREASE_POSITION = SUB_BOARD_SIZE - 1;
-
+    /**
+     * Movewise Cost of landing on lava.
+     */
     final static double LAVA_COST = 5.0;
+    /**
+     * Movewise Cost of landing on wayer.
+     */
     final static double WATER_COST = 2.0;
+    /**
+     * Movewise Cost of landing on a space.
+     */
     final static double DEFAULT_COST = 1.0;
+    /**
+     * Movewise Cost of landing on teleporter.
+     */
     final static double TELEPORTER_COST = 0.0;
 
+    /**
+     * Movements a knight can make.
+     */
     protected static enum Movement {
         UP_LEFT(-LONG_MOVE_DISTANCE, -SHORT_MOVE_DISTANCE, true),
         UP_RIGHT(-LONG_MOVE_DISTANCE, SHORT_MOVE_DISTANCE, true),
@@ -50,8 +59,13 @@ public class Board {
         DOWN_LEFT(LONG_MOVE_DISTANCE, -SHORT_MOVE_DISTANCE, true),
         LEFT_DOWN(SHORT_MOVE_DISTANCE, -LONG_MOVE_DISTANCE, false),
         LEFT_UP(-SHORT_MOVE_DISTANCE, -LONG_MOVE_DISTANCE, false);
-
+        /**
+         * Change in columns for knights movement.
+         */
         final int dColumns;
+        /**
+         * Change in rows for a knights movement
+         */
         final int dRows;
         // whether this direction involves moving the rows first, or the
         final boolean moveRowsFirst;
@@ -63,13 +77,39 @@ public class Board {
         }
     }
 
+    /**
+     * Position of the boards origin.  For most boards this is (0,0).  However when finding longest path
+     * boards will be broken into sub boards that have their base position be each sub boards origin in the
+     * larger board.
+     */
     final Position basePosition;
+    /**
+     * width of the board.
+     */
     final int width;
+    /**
+     * height of the board.
+     */
     final int height;
+    /**
+     * Set of position's representing locations where teleporters reside.
+     */
     final Set<Position> teleporters = Sets.newHashSet();
+    /**
+     * Set of position's representing locations where lava resides.
+     */
     final Set<Position> lava = Sets.newHashSet();
+    /**
+     * Set of position's representing locations where rocks reside.
+     */
     final Set<Position> rocks = Sets.newHashSet();
+    /**
+     * Set of position's representing locations where barriers reside.
+     */
     final Set<Position> barriers = Sets.newHashSet();
+    /**
+     * Set of position's representing locations where water resides.
+     */
     final Set<Position> water = Sets.newHashSet();
 
     /**
@@ -81,13 +121,18 @@ public class Board {
      *              Upper left is 0,0.  Bottom right is width,height.
      */
     public Board(final String board) throws IOException {
+        // set base position to be 0,0,
         basePosition = new Position(0, 0);
+        // read in the board string, split on newline for rows
+        // confirm size of everything is appropriate
         final List<String> rows = Lists.newArrayList(board.replaceAll(" ", "").split("\n"));
         height = rows.size();
         if (rows.isEmpty()) {
             throw new IOException("The board cannot have 0 rows.");
         }
         width = rows.get(0).length();
+        // iterate over each cell in the string grid to extract
+        // position type.
         for (int r = 0; r < rows.size(); r++) {
             final String row = rows.get(r);
             if (row.length() != width) {
@@ -96,6 +141,7 @@ public class Board {
             for (int c = 0; c < row.length(); c++) {
                 final Position p = new Position(r, c);
                 final char value = row.charAt(c);
+                // if the position is special, add it to the set of positions.
                 switch (value) {
                     case 'W':
                         // this is a water position
@@ -158,41 +204,162 @@ public class Board {
             throw new Exception("The board must have width and height be multiples of eight or the longest path is too slow.");
         }
 
-        final Graph<Board> graph = generateSubBoardGraph();
+        /*
+         * take starting position
+         * make 1-2 moves to get to adjacent sub graph.
+         * add these positions to longest path.
+         * make the position that lands in the adjacent sub graph the new start position.
+         * Run normally, but remember to remove the start and possible second position from the graph created
+         * by final sub graph
+         */
 
+        // create a graph of all the sub boards of this board.
+        // this results in a graph where each node represents a sub board and that node is connected
+        // by edges to other nodes that contain adjacent (diagonal included) sub graphs
+        final Graph graph = generateSubBoardGraph();
+        // number of rows of sub boards
         int numRowsOfSubBoards = height / SUB_BOARD_SIZE;
+        // number of columns of sub rows
         int numColsOfSubBoards = width / SUB_BOARD_SIZE;
 
         // subboard that the starting position is in
-        final Board startingBoard = getSubBoard(start);
-        final Vertex<Board> startVertex = new Vertex<Board>(startingBoard);
-
+        final Board startBoard = getSubBoard(start);
         // subboard that the end position is in
         final Board endBoard = getSubBoard(end);
+        // compute the longest path from the starting board to the endboard
+        // this path will end up running throguh all other sub boards.
+        Path path = graph.computeLongestPath(startBoard, endBoard, numRowsOfSubBoards * numColsOfSubBoards);
+        if (path.getPath().isEmpty()) {
+            // this should never happen, but if it does return an unsolved path an log it.
+            logger.severe("Empty path from start subgraph to end subgraph.  This should not happen please investigate.");
+            return new Path(Lists.<Vertex>newArrayList(), -1);
+        }
 
-        final Vertex<Board> endVertex = new Vertex<Board>(endBoard);
-        Path<Board> path = graph.computeLongestPath(startVertex, endVertex, numRowsOfSubBoards * numColsOfSubBoards);
-        //if()
-        return path;
+        // path of sub boards from start location to end location
+        final List<Vertex> boardPath = path.getPath();
+        // longest path that will accumulate over running a knights tour/longest path
+        // in sub boards on the board path
+        final List<Vertex> longestPath = Lists.newArrayList();
+        // get the first board
+        Board curBoard = (Board) boardPath.remove(0);
+        // get the starting position on this board
+        // first board this will be the global start position
+        Position curStartPosition = getSubBoardPosition(start);
+        Position curEndPosition;
+        for (final Vertex nextVertex : boardPath) {
+            // iterate through the sub boards
+            // generate the appropriate positions on this board to enter
+            // from the previous board
+            // as well as positions to end on in order to move to next board
+            final Board nextBoard = (Board) nextVertex;
+            curEndPosition = computeLinkPosition(curBoard, nextBoard, curStartPosition, true);
+            //compute the longest path on this sub board from the entrance position to the exit position
+            final Path longestPathInSubBoard = curBoard.computeLongestPathBruteForce(curStartPosition, curEndPosition);
+            // add these positions to the longest path
+            for (Vertex v : longestPathInSubBoard.getPath()) {
+                longestPath.add(curBoard.getBasePosition().add((Position) v));
+            }
+            // compute the position that the next board will start at based on coming from
+            // the current board
+            curStartPosition = computeLinkPosition(curBoard, nextBoard, curStartPosition, false);
+            curBoard = nextBoard;
+        }
+
+        // get the position within the sub board that end is.
+        curEndPosition = getSubBoardPosition(end);
+        final Path longestPathInEndSubBoard = curBoard.computeLongestPathBruteForce(curStartPosition, curEndPosition);
+        for (Vertex v : longestPathInEndSubBoard.getPath()) {
+            longestPath.add(curBoard.getBasePosition().add((Position) v));
+        }
+
+        return new Path(longestPath, longestPath.size() - 1);
     }
 
-    protected Position computeLinkPosition(Board prev, Board next, boolean gettingPrevPosition) throws Exception {
-        // ensure boards are next to each other
-
+    /**
+     * Determines link positions when moving from prev board to next board.  These are predetermined positions for each board.  As a result, we
+     * can choose these to guarantee quick execution of knight tour in each board that doesn't contain a global start or end position.
+     * <p/>
+     * There are 64 combinations of start and exit positions depending on how the path moves.
+     * <p/>
+     * NOTE: I have not tested all these combinations out so it is possible that the depth first search longest path will run slowly on
+     * some combinations.
+     *
+     * @param prev                sub board that we are moving from.
+     * @param next                sub board that we are moving to.
+     * @param prevStartPosition   position that we started from in our prev board.  This is used to determine what color square
+     *                            we should end on in the prev board and subsequently what color square we should land on in the
+     *                            next sub board.
+     * @param gettingPrevPosition true if we want to get the link Position on the prev board, otherwise the link position on the
+     *                            next board
+     * @return the position of the link.
+     * @throws Exception if the two boards are too far apart.
+     */
+    protected Position computeLinkPosition(Board prev, Board next, Position prevStartPosition, boolean gettingPrevPosition) throws Exception {
+        // determine which direction the next sub board is in comparison to the prev sub board.
         int rowDirection = (next.getBasePosition().getR() / SUB_BOARD_SIZE) - (prev.getBasePosition().getR() / SUB_BOARD_SIZE);
         int colDirection = (next.getBasePosition().getC() / SUB_BOARD_SIZE) - (prev.getBasePosition().getC() / SUB_BOARD_SIZE);
         if (Math.abs(rowDirection) > 1 || Math.abs(colDirection) > 1) {
             throw new Exception("These boards not next to each other.prev" + prev + " next: " + next);
         }
+        //TODO(blakec) There is probably a more concise way to do this, but I'm spelling them out
+        //TODO(blakec) for clarity of thought
+        //TODO(blakec) Also figure out cleaner way to put in constants
 
-        int r = rowDirection == 1 ? PREV_LINK_INCREASE_POSITION : rowDirection == -1 ? PREV_LINK_DECREASE_POSITION : PREV_LINK_STAY_POSITION;
-        int c = colDirection == 1 ? PREV_LINK_INCREASE_POSITION : colDirection == -1 ? PREV_LINK_DECREASE_POSITION : PREV_LINK_STAY_POSITION;
-        if (!gettingPrevPosition) {
-            r = rowDirection == 1 ? NEXT_LINK_INCREASE_POSITION : rowDirection == -1 ? NEXT_LINK_DECREASE_POSITION : NEXT_LINK_STAY_POSITION;
-            c = colDirection == 1 ? NEXT_LINK_INCREASE_POSITION : colDirection == -1 ? NEXT_LINK_DECREASE_POSITION : NEXT_LINK_STAY_POSITION;
+        if (rowDirection == -1 && colDirection == 0) {
+            // -1 0 - NORTH
+            // if start is white, end on a black
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(0, 5) : new Position(0, 4);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.LEFT_UP));
+            return gettingPrevPosition ? prevLink : nextLink;
+        } else if (rowDirection == -1 && colDirection == 1) {
+            // -1 1 - NORTH EAST
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(0, 7) : new Position(1, 7);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.UP_RIGHT));
+            return gettingPrevPosition ? prevLink : nextLink;
+        } else if (rowDirection == 0 && colDirection == 1) {
+            //  0 1 - EAST
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(4, 7) : new Position(5, 7);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_RIGHT));
+            return gettingPrevPosition ? prevLink : nextLink;
+        } else if (rowDirection == 1 && colDirection == 1) {
+            //  1 1 - SOUTH EAST
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(6, 7) : new Position(7, 7);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_RIGHT));
+            return gettingPrevPosition ? prevLink : nextLink;
+        } else if (rowDirection == 1 && colDirection == 0) {
+            //  1 0 - SOUTH
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(7, 4) : new Position(7, 5);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.RIGHT_DOWN));
+            return gettingPrevPosition ? prevLink : nextLink;
+        } else if (rowDirection == 1 && colDirection == -1) {
+            //  1 -1 - SOUTH WEST
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(7, 0) : new Position(6, 0);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_LEFT));
+            return gettingPrevPosition ? prevLink : nextLink;
+        } else if (rowDirection == 0 && colDirection == -1) {
+            //  0 -1 - WEST
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(5, 0) : new Position(4, 0);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_LEFT));
+            return gettingPrevPosition ? prevLink : nextLink;
+        } else {
+            //  0 -1 - NORTH WEST
+            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(1, 0) : new Position(0, 0);
+            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.UP_LEFT));
+            return gettingPrevPosition ? prevLink : nextLink;
         }
 
-        return prev.getBasePosition().add(new Position(r, c));
+    }
+
+    /**
+     * Returns the subboard that this position resides in.
+     *
+     * @param p position.
+     * @return subboard that this position resides in.
+     */
+    protected Position getSubBoardPosition(final Position p) {
+        return new Position(
+                p.getR() < 0 ? (SUB_BOARD_SIZE + p.getR()) % SUB_BOARD_SIZE : p.getR() % SUB_BOARD_SIZE,
+                p.getC() < 0 ? (SUB_BOARD_SIZE + p.getC()) % SUB_BOARD_SIZE : p.getC() % SUB_BOARD_SIZE);
     }
 
     /**
@@ -209,8 +376,15 @@ public class Board {
                 SUB_BOARD_SIZE);
     }
 
-    protected Graph<Board> generateSubBoardGraph() {
-        final Graph<Board> graph = new Graph<Board>();
+    /**
+     * Generate a sub board graph from current board.  This graph is composed of nodes each containing a sub board of the
+     * large board.  Board nodes are connected if the sub boards are adjacent or diagonal to each other in the large board.
+     * Each edge has a weight of 1.
+     *
+     * @return
+     */
+    protected Graph generateSubBoardGraph() {
+        final Graph graph = new Graph();
         int numRowsOfSubBoards = height / SUB_BOARD_SIZE;
         int numColsOfSubBoards = width / SUB_BOARD_SIZE;
         for (int r = 0; r < height / SUB_BOARD_SIZE; r++) {
@@ -218,18 +392,27 @@ public class Board {
                 final Board board = new Board(r * SUB_BOARD_SIZE, c * SUB_BOARD_SIZE, SUB_BOARD_SIZE, SUB_BOARD_SIZE);
                 final Set<Board> neighborSubBoards = generateNeighborSubBoards(r, c, numRowsOfSubBoards, numColsOfSubBoards);
                 for (Board neighbor : neighborSubBoards) {
-                    graph.addEdge(new Vertex<Board>(board), new Vertex<Board>(neighbor), 1);
+                    graph.addEdge(board, neighbor, 1);
                 }
             }
         }
         return graph;
     }
 
-    protected Set<Board> generateNeighborSubBoards(final int r,
-                                                   final int c,
-                                                   final int numRowsOfSubBoards,
-                                                   final int numColsOfSubBoards) {
-        final Set<Board> subBoards = Sets.newHashSet();
+    /**
+     * Generates the neighbors of this sub board.
+     *
+     * @param r                  row of sub board in large board.
+     * @param c                  column of sub board in large board.
+     * @param numRowsOfSubBoards number of rows of sub boards in the large board.
+     * @param numColsOfSubBoards number of columns of sub boards in the large board.
+     * @return a set of sub boards that are neighbors of this board.
+     */
+    protected Set generateNeighborSubBoards(final int r,
+                                            final int c,
+                                            final int numRowsOfSubBoards,
+                                            final int numColsOfSubBoards) {
+        final Set subBoards = Sets.newHashSet();
         for (int dr = -1; dr <= 1; dr++) {
             for (int dc = -1; dc <= 1; dc++) {
                 if (dr == 0 && dc == 0) {
@@ -250,7 +433,20 @@ public class Board {
         return subBoards;
     }
 
-    protected Path computeLongestPathSmall(final Position start, final Position end) throws Exception {
+    /**
+     * Computes the longest path from start to end within this board.  The graph traversal depth first search the Warnsdorf's rule as
+     * a heuristic for choosing which neighbor to investigate next.  This will run until all paths are exhausted or a path with the max
+     * number of hops is reached.
+     * <p/>
+     * NOTE:  Being a brute force depth first search algorithm, this could take a long time on larger boards.  Please limit useage to
+     * 8x8 or smaller boards.
+     *
+     * @param start start position.
+     * @param end   end position.
+     * @return Path containing sequence of positions to achieve the longest path and the associated weight of the path.
+     * @throws Exception
+     */
+    protected Path computeLongestPathBruteForce(final Position start, final Position end) throws Exception {
         if (!isValidPosition(start)) {
             throw new Exception("The start position " + start + " is invalid.  Either off the board or starting on barrier or rock.");
         }
@@ -265,7 +461,7 @@ public class Board {
         // thus the max number of possible moves is has to be odd and one less than the number of even squares
         boolean isNumberOfSquaresEven = width * height % 2 == 0;
         int maxPathSize = isNumberOfSquaresEven && arePositionsSameColor ? width * height - 1 : width * height;
-        return graph.computeLongestPath(new Vertex(start), new Vertex(end), maxPathSize);
+        return graph.computeLongestPath(start, end, maxPathSize);
     }
 
     /**
@@ -275,17 +471,24 @@ public class Board {
      * @return
      */
     protected boolean isPositionWhite(final Position p) {
-        return basePosition.add(p).getC() % 2 == basePosition.add(p).getR() % 2;
+        return p.getC() % 2 == p.getR() % 2;
     }
 
-    public boolean isValidSetOfMoves(final List<Position> moves) {
+    /**
+     * Determines whether the input list of positions is a valid set of moves for a knight.
+     *
+     * @param moves list of moves.
+     * @return true if the list of moves are possible by a single knight. false otherwise.
+     */
+    public static boolean isValidSetOfMoves(final List<Position> moves) {
         if (moves.isEmpty()) {
             // no move is a valid move
             return true;
         }
 
-        Position cur = moves.remove(0);
-        for (final Position next : moves) {
+        Position cur = moves.get(0);
+        for (int i = 1; i < moves.size(); i++) {
+            final Position next = moves.get(i);
             if (!isValidMove(cur, next)) {
                 return false;
             }
@@ -301,7 +504,7 @@ public class Board {
      * @param end
      * @return
      */
-    protected boolean isValidMove(final Position start, final Position end) {
+    protected static boolean isValidMove(final Position start, final Position end) {
         int dRow = Math.abs(end.getR() - start.getR());
         int dCol = Math.abs(end.getC() - start.getC());
         return (dRow == LONG_MOVE_DISTANCE && dCol == SHORT_MOVE_DISTANCE) || (dRow == SHORT_MOVE_DISTANCE && dCol == LONG_MOVE_DISTANCE);
@@ -322,23 +525,31 @@ public class Board {
             throw new Exception("The end position is invalid.  Either off the board or starting on barrier or rock.");
         }
         Graph graph = generateGraph();
-        return graph.computeShortestPath(new Vertex<Position>(start), new Vertex<Position>(end));
+        return graph.computeShortestPath(start, end);
     }
 
     /**
-     * Generates all the moves possible on this board.
+     * Generates a graph a knights movements.  Each node in the graph is a position a knight can land on.
+     * Two nodes are connected by an edge if a knight can make a single jump to from the first node's board position
+     * to the second node's board position.  The graph uses directed edges, however in the case of a board if a node A
+     * has a directed edge to B, the B will have a directed edge to A.
+     * <p/>
+     * If the board position of the target node is a normal position the edge weight will be 1.0.
+     * If the board position of the target node is not a normal position, its weight will be based on the landing position.
+     * <p/>
+     * If a node contains a teleporter position, it will also have edges to all other teleporters.
      *
      * @return Graph representing all possible moves a knight can make on the board.
      */
-    protected Graph<Position> generateGraph() {
-        final Graph<Position> graph = new Graph<Position>();
+    protected Graph generateGraph() {
+        final Graph graph = new Graph();
         for (int r = 0; r < height; r++) {
             for (int c = 0; c < width; c++) {
                 final Position position = new Position(r, c);
                 final Set<Position> nextPositions = generatePossibleKnightMoves(position);
                 for (Position nextPosition : nextPositions) {
                     final double cost = computeCostOfMove(position, nextPosition);
-                    graph.addEdge(new Vertex<Position>(position), new Vertex<Position>(nextPosition), cost);
+                    graph.addEdge(position, nextPosition, cost);
                 }
             }
         }
@@ -347,12 +558,13 @@ public class Board {
 
     /**
      * Generates a Set of valid single moves a knight can make from a single position.
+     * This checks for moving over barriers and landing on unlandable positions.
      *
      * @param p position.
      * @return all valid moves a knight can make from that position.
      */
-    protected Set<Position> generatePossibleKnightMoves(final Position p) {
-        final Set<Position> possibleMoves = Sets.newHashSet();
+    protected Set generatePossibleKnightMoves(final Position p) {
+        final Set possibleMoves = Sets.newHashSet();
         for (Movement d : Movement.values()) {
             final Position possiblePosition = moveDirection(p, d);
             if (isValidPosition(possiblePosition) && !doesMoveHitBarrier(p, d)) {
@@ -368,6 +580,13 @@ public class Board {
         return possibleMoves;
     }
 
+    /**
+     * Move the position according to the specified movement.
+     *
+     * @param p        position
+     * @param movement movement.
+     * @return the new position after moving.
+     */
     protected static Position moveDirection(final Position p, final Movement movement) {
         return new Position(p.getR() + movement.dRows, p.getC() + movement.dColumns);
     }
@@ -380,7 +599,7 @@ public class Board {
      * @return true if move hits a barrier.
      */
     protected boolean doesMoveHitBarrier(final Position start, final Movement d) {
-        final Set<Position> positionPath = Sets.newHashSet();
+        final Set positionPath = Sets.newHashSet();
 
         final int firstMoveDistance = d.moveRowsFirst ? d.dRows : d.dColumns;
         for (int i = 1; i <= firstMoveDistance; i++) {
@@ -400,6 +619,12 @@ public class Board {
         return !Sets.intersection(barriers, positionPath).isEmpty();
     }
 
+    /**
+     * Checks if the position is on the board and isn't on top of a rock or barrier.
+     *
+     * @param p position
+     * @return true if the position is valid, false otherwise.
+     */
     protected boolean isValidPosition(final Position p) {
         if (p.getC() < 0 || p.getC() >= width) {
             return false;
@@ -437,6 +662,11 @@ public class Board {
         return DEFAULT_COST;
     }
 
+    /**
+     * Returns the base position of this board.
+     *
+     * @return base position.
+     */
     public Position getBasePosition() {
         return basePosition;
     }

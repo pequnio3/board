@@ -23,13 +23,13 @@ public class GraphTest {
 
     @Test
     public void test_simple() throws Exception {
-        Vertex v0 = new Vertex(new Position(0, 0));
-        Vertex v1 = new Vertex(new Position(1, 1));
-        Vertex v2 = new Vertex(new Position(2, 2));
-        Vertex v3 = new Vertex(new Position(3, 3));
-        Vertex v4 = new Vertex(new Position(4, 4));
-        Vertex v5 = new Vertex(new Position(5, 5));
-        Vertex v6 = new Vertex(new Position(6, 6));
+        Vertex v0 =new Position(0, 0);
+        Vertex v1 = new Position(1, 1);
+        Vertex v2 = new Position(2, 2);
+        Vertex v3 = new Position(3, 3);
+        Vertex v4 = new Position(4, 4);
+        Vertex v5 = new Position(5, 5);
+        Vertex v6 = new Position(6, 6);
         final Graph graph = new Graph();
         graph.addEdge(v0, v1, 80);
         graph.addEdge(v1, v0, 80);
@@ -55,14 +55,14 @@ public class GraphTest {
 
     @Test
     public void test_simple_noSolution() throws Exception {
-        Vertex v0 = new Vertex(new Position(0, 0));
-        Vertex v1 = new Vertex(new Position(1, 1));
-        Vertex v2 = new Vertex(new Position(2, 2));
-        Vertex v3 = new Vertex(new Position(3, 3));
-        Vertex v4 = new Vertex(new Position(4, 4));
-        Vertex v5 = new Vertex(new Position(5, 5));
-        Vertex v6 = new Vertex(new Position(6, 6));
-        Vertex v7 = new Vertex(new Position(7, 7));
+        Vertex v0 = new Position(0, 0);
+        Vertex v1 = new Position(1, 1);
+        Vertex v2 = new Position(2, 2);
+        Vertex v3 = new Position(3, 3);
+        Vertex v4 = new Position(4, 4);
+        Vertex v5 = new Position(5, 5);
+        Vertex v6 = new Position(6, 6);
+        Vertex v7 = new Position(7, 7);
         final Graph graph = new Graph();
         graph.addEdge(v0, v1, 80);
         graph.addEdge(v1, v0, 80);
@@ -88,14 +88,14 @@ public class GraphTest {
 
     @Test
     public void test_sortingNeighbors() throws Exception {
-        Vertex v0 = new Vertex(new Position(0, 0));
-        Vertex v1 = new Vertex(new Position(1, 1));
-        Vertex v2 = new Vertex(new Position(2, 2));
-        Vertex v3 = new Vertex(new Position(3, 3));
-        Vertex v4 = new Vertex(new Position(4, 4));
-        Vertex v5 = new Vertex(new Position(5, 5));
-        Vertex v6 = new Vertex(new Position(6, 6));
-        Vertex v7 = new Vertex(new Position(7, 7));
+        Vertex v0 = new Position(0, 0);
+        Vertex v1 = new Position(1, 1);
+        Vertex v2 = new Position(2, 2);
+        Vertex v3 = new Position(3, 3);
+        Vertex v4 = new Position(4, 4);
+        Vertex v5 = new Position(5, 5);
+        Vertex v6 = new Position(6, 6);
+        Vertex v7 = new Position(7, 7);
         final Graph graph = new Graph();
         graph.addEdge(v0, v1, 80);
         graph.addEdge(v0, v2, 82);

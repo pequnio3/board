@@ -2,6 +2,8 @@ package com.blakec.graph;
 
 /**
  * Created by blakec on 6/2/15.
+ *
+ * Directed Edge to a target vertex.  Also contains a weight.
  */
 public class Edge {
     protected final Vertex target;

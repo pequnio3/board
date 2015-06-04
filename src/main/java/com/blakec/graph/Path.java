@@ -6,17 +6,20 @@ import java.util.List;
 
 /**
  * Created by blakec on 6/2/15.
+ *
+ * Path within a graph between two points with the corresponding total weight of the path.
+ *
  */
-public class Path<T> {
-    final List<Vertex<T>> path = Lists.newArrayList();
+public class Path {
+    final List<Vertex> path = Lists.newArrayList();
     final double weight;
 
-    public Path(final List<Vertex<T>> path, final double weight) {
+    public Path(final List<Vertex> path, final double weight) {
         this.weight = weight;
         this.path.addAll(path);
     }
 
-    public List<Vertex<T>> getPath() {
+    public List<Vertex> getPath() {
         return path;
     }
 
