@@ -23,6 +23,10 @@ public class Graph {
     final Map<Vertex, Set<Edge>> graph = Maps.newHashMap();
     int numPathsSeen = 0;
 
+    /*****************************
+     ********** CREATION *********
+     *****************************/
+
     public boolean hasEdge(final Vertex v, final Vertex u, final long weight) {
         if (!graph.containsKey(v)) {
             return false;
@@ -48,6 +52,11 @@ public class Graph {
     public Set<Edge> getEdges(final Vertex v) {
         return graph.get(v);
     }
+
+
+    /**********************************
+     ********** LONGEST PATH *********
+     **********************************/
 
     /**
      * Computes the longest path from source to target. This uses Warnsdorf's rules as a
@@ -176,6 +185,11 @@ public class Graph {
         });
         return sortedNeighbors;
     }
+
+    /**********************************
+     ********** SHORTEST PATH *********
+     **********************************/
+
 
     /**
      * Computes the shortest path from source to target using Dijkstra's algorithm.  Uses a

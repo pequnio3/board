@@ -3,11 +3,13 @@ package com.blakec;
 import com.blakec.graph.Graph;
 import com.blakec.graph.Path;
 import com.blakec.graph.Vertex;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -34,48 +36,26 @@ public class Board implements Vertex {
      * Movewise Cost of landing on lava.
      */
     final static double LAVA_COST = 5.0;
+    final static char LAVA_CHAR = 'L';
     /**
      * Movewise Cost of landing on wayer.
      */
     final static double WATER_COST = 2.0;
+    final static char WATER_CHAR = 'W';
     /**
      * Movewise Cost of landing on a space.
      */
     final static double DEFAULT_COST = 1.0;
+    final static char DEFAULT_CHAR = '.';
     /**
      * Movewise Cost of landing on teleporter.
      */
     final static double TELEPORTER_COST = 0.0;
+    final static char TELEPORTER_CHAR = 'T';
 
-    /**
-     * Movements a knight can make.
-     */
-    protected static enum Movement {
-        UP_LEFT(-LONG_MOVE_DISTANCE, -SHORT_MOVE_DISTANCE, true),
-        UP_RIGHT(-LONG_MOVE_DISTANCE, SHORT_MOVE_DISTANCE, true),
-        RIGHT_UP(-SHORT_MOVE_DISTANCE, LONG_MOVE_DISTANCE, false),
-        RIGHT_DOWN(SHORT_MOVE_DISTANCE, LONG_MOVE_DISTANCE, false),
-        DOWN_RIGHT(LONG_MOVE_DISTANCE, SHORT_MOVE_DISTANCE, true),
-        DOWN_LEFT(LONG_MOVE_DISTANCE, -SHORT_MOVE_DISTANCE, true),
-        LEFT_DOWN(SHORT_MOVE_DISTANCE, -LONG_MOVE_DISTANCE, false),
-        LEFT_UP(-SHORT_MOVE_DISTANCE, -LONG_MOVE_DISTANCE, false);
-        /**
-         * Change in columns for knights movement.
-         */
-        final int dColumns;
-        /**
-         * Change in rows for a knights movement
-         */
-        final int dRows;
-        // whether this direction involves moving the rows first, or the
-        final boolean moveRowsFirst;
-
-        Movement(int dRows, int dColumns, boolean moveRowsFirst) {
-            this.dColumns = dColumns;
-            this.dRows = dRows;
-            this.moveRowsFirst = moveRowsFirst;
-        }
-    }
+    final static char ROCK_CHAR = 'R';
+    final static char BARRIER_CHAR = 'B';
+    final static char KNIGHT_CHAR = 'B';
 
     /**
      * Position of the boards origin.  For most boards this is (0,0).  However when finding longest path
@@ -112,6 +92,14 @@ public class Board implements Vertex {
      */
     final Set<Position> water = Sets.newHashSet();
 
+    final Map<Character, Set<Position>> characterToSpecialPosition = ImmutableMap.<Character, Set<Position>>builder()
+            .put(TELEPORTER_CHAR, teleporters)
+            .put(LAVA_CHAR, lava)
+            .put(ROCK_CHAR, rocks)
+            .put(BARRIER_CHAR, barriers)
+            .put(WATER_CHAR, water)
+            .build();
+
     /**
      * @param board board represented by a grid of '.', 'W', 'R', 'B', 'T' characters.
      *              The height of the board is number of newline characters in the string.
@@ -140,32 +128,9 @@ public class Board implements Vertex {
             }
             for (int c = 0; c < row.length(); c++) {
                 final Position p = new Position(r, c);
-                final char value = row.charAt(c);
-                // if the position is special, add it to the set of positions.
-                switch (value) {
-                    case 'W':
-                        // this is a water position
-                        water.add(p);
-                        break;
-                    case 'R':
-                        // this is a rock position
-                        rocks.add(p);
-                        break;
-                    case 'B':
-                        // this is a barrier position
-                        barriers.add(p);
-                        break;
-                    case 'T':
-                        // this is a teleporter position
-                        teleporters.add(p);
-                        break;
-                    case 'L':
-                        // this is a lava position
-                        lava.add(p);
-                        break;
-                    default:
-                        //do nothing
-                        break;
+                final char positionType = row.charAt(c);
+                if (characterToSpecialPosition.containsKey(positionType)) {
+                    characterToSpecialPosition.get(positionType).add(p);
                 }
             }
         }
@@ -185,6 +150,10 @@ public class Board implements Vertex {
         this.width = width;
         this.height = height;
     }
+
+    /**********************************
+     ********** LONGEST PATH *********
+     **********************************/
 
     /**
      * Computes the longest path between the start position and end position.
@@ -453,7 +422,7 @@ public class Board implements Vertex {
         if (!isValidPosition(end)) {
             throw new Exception("The end position " + end + " is invalid.  Either off the board or starting on barrier or rock.");
         }
-        Graph graph = generateGraph();
+        Graph graph = generatePositionGraph();
         boolean arePositionsSameColor = isPositionWhite(start) == isPositionWhite(end);
         // every move that is made changes the knights position to a different color (black or white)
         // if the final position is the same color this means the knight has to make an even number of moves to get there
@@ -464,51 +433,9 @@ public class Board implements Vertex {
         return graph.computeLongestPath(start, end, maxPathSize);
     }
 
-    /**
-     * Determines whether the position would be white or black.
-     *
-     * @param p
-     * @return
-     */
-    protected boolean isPositionWhite(final Position p) {
-        return p.getC() % 2 == p.getR() % 2;
-    }
-
-    /**
-     * Determines whether the input list of positions is a valid set of moves for a knight.
-     *
-     * @param moves list of moves.
-     * @return true if the list of moves are possible by a single knight. false otherwise.
-     */
-    public static boolean isValidSetOfMoves(final List<Position> moves) {
-        if (moves.isEmpty()) {
-            // no move is a valid move
-            return true;
-        }
-
-        Position cur = moves.get(0);
-        for (int i = 1; i < moves.size(); i++) {
-            final Position next = moves.get(i);
-            if (!isValidMove(cur, next)) {
-                return false;
-            }
-            cur = next;
-        }
-        return true;
-    }
-
-    /**
-     * Determines whether moving from start to end is a valid move according to a Knights movement
-     *
-     * @param start
-     * @param end
-     * @return
-     */
-    protected static boolean isValidMove(final Position start, final Position end) {
-        int dRow = Math.abs(end.getR() - start.getR());
-        int dCol = Math.abs(end.getC() - start.getC());
-        return (dRow == LONG_MOVE_DISTANCE && dCol == SHORT_MOVE_DISTANCE) || (dRow == SHORT_MOVE_DISTANCE && dCol == LONG_MOVE_DISTANCE);
-    }
+    /**********************************
+     ********** SHORTEST PATH *********
+     **********************************/
 
     /**
      * Computes the shortest path between the start position and end position.
@@ -524,7 +451,7 @@ public class Board implements Vertex {
         if (!isValidPosition(end)) {
             throw new Exception("The end position is invalid.  Either off the board or starting on barrier or rock.");
         }
-        Graph graph = generateGraph();
+        Graph graph = generatePositionGraph();
         return graph.computeShortestPath(start, end);
     }
 
@@ -541,19 +468,134 @@ public class Board implements Vertex {
      *
      * @return Graph representing all possible moves a knight can make on the board.
      */
-    protected Graph generateGraph() {
+    protected Graph generatePositionGraph() {
         final Graph graph = new Graph();
         for (int r = 0; r < height; r++) {
             for (int c = 0; c < width; c++) {
                 final Position position = new Position(r, c);
+                if(!isValidPosition(position)){
+                    // this is not a valid position (probably a rock or barrier)
+                    // and should not be included in our graph.
+                    continue;
+                }
                 final Set<Position> nextPositions = generatePossibleKnightMoves(position);
-                for (Position nextPosition : nextPositions) {
+                for (final Position nextPosition : nextPositions) {
                     final double cost = computeCostOfMove(position, nextPosition);
                     graph.addEdge(position, nextPosition, cost);
                 }
             }
         }
         return graph;
+    }
+
+    /**************************************
+     ********** MOVEMENT/POSITION *********
+     **************************************/
+
+    /**
+     * Movements a knight can make.
+     */
+    protected static enum Movement {
+        UP_LEFT(-LONG_MOVE_DISTANCE, -SHORT_MOVE_DISTANCE, true),
+        UP_RIGHT(-LONG_MOVE_DISTANCE, SHORT_MOVE_DISTANCE, true),
+        RIGHT_UP(-SHORT_MOVE_DISTANCE, LONG_MOVE_DISTANCE, false),
+        RIGHT_DOWN(SHORT_MOVE_DISTANCE, LONG_MOVE_DISTANCE, false),
+        DOWN_RIGHT(LONG_MOVE_DISTANCE, SHORT_MOVE_DISTANCE, true),
+        DOWN_LEFT(LONG_MOVE_DISTANCE, -SHORT_MOVE_DISTANCE, true),
+        LEFT_DOWN(SHORT_MOVE_DISTANCE, -LONG_MOVE_DISTANCE, false),
+        LEFT_UP(-SHORT_MOVE_DISTANCE, -LONG_MOVE_DISTANCE, false);
+        /**
+         * Change in columns for knights movement.
+         */
+        final int dColumns;
+        /**
+         * Change in rows for a knights movement
+         */
+        final int dRows;
+        // whether this direction involves moving the rows first, or the
+        final boolean moveRowsFirst;
+
+        Movement(int dRows, int dColumns, boolean moveRowsFirst) {
+            this.dColumns = dColumns;
+            this.dRows = dRows;
+            this.moveRowsFirst = moveRowsFirst;
+        }
+    }
+
+    /**
+     * Determines whether the input list of positions is a valid set of moves for a knight.
+     *
+     * @param moves      list of moves.
+     * @param printMoves if true the moves on the board will printed to be standard out.
+     * @return true if the list of moves are possible by a single knight. false otherwise.
+     */
+    public boolean isValidSetOfMoves(final List<Position> moves, boolean printMoves) {
+        if (moves.isEmpty()) {
+            // no move is a valid move
+            return true;
+        }
+
+        Position cur = moves.get(0);
+        for (int i = 1; i < moves.size(); i++) {
+            final Position next = moves.get(i);
+            if (!isValidMove(cur, next)) {
+                return false;
+            }
+            cur = next;
+        }
+        if (printMoves) {
+            printKnightsPathOnBoard(moves);
+        }
+        return true;
+    }
+
+    /**
+     * Determines whether the input list of positions is a valid set of moves for a knight.
+     *
+     * @param moves list of moves.
+     * @return true if the list of moves are possible by a single knight. false otherwise.
+     */
+    public boolean isValidSetOfMoves(final List<Position> moves) {
+        return isValidSetOfMoves(moves, false);
+    }
+
+    /**
+     * Determines whether moving from start to end is a valid move according to a Knights movement and possible obstacles.
+     *
+     * @param start
+     * @param end
+     * @return
+     */
+    protected boolean isValidMove(final Position start, final Position end) {
+        int dRow = Math.abs(end.getR() - start.getR());
+        int dCol = Math.abs(end.getC() - start.getC());
+        // true if the pure movement is in the L shape.
+        boolean legalMovement = (dRow == LONG_MOVE_DISTANCE && dCol == SHORT_MOVE_DISTANCE) || (dRow == SHORT_MOVE_DISTANCE && dCol == LONG_MOVE_DISTANCE);
+
+        Movement movement = null;
+        for (Movement m : Movement.values()) {
+            if (m.dRows == dRow && m.dColumns == dCol) {
+                movement = m;
+            }
+        }
+        if (movement == null) {
+            return false;
+        }
+
+        boolean moveHitsBarrier = doesMoveHitBarrier(start, movement);
+        boolean isValidStartPosition = isValidPosition(start);
+        boolean isValidEndPosition = isValidPosition(end);
+        return legalMovement && !moveHitsBarrier && isValidEndPosition && isValidStartPosition;
+    }
+
+    /**
+     * Determines whether the position would be white or black.
+     *
+     * @param p
+     * @return
+     */
+    protected boolean isPositionWhite(final Position p) {
+        return p.getC() % 2 == p.getR() % 2;
     }
 
     /**
@@ -567,7 +609,7 @@ public class Board implements Vertex {
         final Set possibleMoves = Sets.newHashSet();
         for (Movement d : Movement.values()) {
             final Position possiblePosition = moveDirection(p, d);
-            if (isValidPosition(possiblePosition) && !doesMoveHitBarrier(p, d)) {
+            if (isValidMove(p, possiblePosition)) {
                 // only keep this move if it is valid
                 possibleMoves.add(possiblePosition);
             }
@@ -671,6 +713,57 @@ public class Board implements Vertex {
         return basePosition;
     }
 
+    /**
+     * Prints the board for each step the knight makes in the provided path..
+     *
+     * @param path
+     */
+    public void printKnightsPathOnBoard(final List<Position> path) {
+        for (final Position p : path) {
+            System.out.println("----- Knight at Position " + p + " -------");
+            printBoardWithKnightAtPosition(p);
+        }
+    }
+
+    /**
+     * Prints the current board with the knight in the given position.
+     *
+     * @param knight knights position.
+     */
+    public void printBoardWithKnightAtPosition(Position knight) {
+        StringBuilder boardBuilder = new StringBuilder();
+        for (int r = 0; r < height; r++) {
+            for (int c = 0; c < width; c++) {
+                final Position p = new Position(r, c);
+                char positionType = getPositionType(p);
+                if (p.equals(knight)) {
+                    boardBuilder.append(KNIGHT_CHAR);
+                } else {
+                    boardBuilder.append(positionType);
+                }
+            }
+            boardBuilder.append('\n');
+        }
+        System.out.println(boardBuilder.toString());
+    }
+
+    /**
+     * Given a position determines the character position type of this position. I.E. lava or rocks.
+     *
+     * @param p position
+     * @return character representing position type.
+     */
+    protected char getPositionType(final Position p) {
+        for (Map.Entry<Character, Set<Position>> entry : characterToSpecialPosition.entrySet()) {
+            final Character positionType = entry.getKey();
+            final Set<Position> positions = entry.getValue();
+            if (positions.contains(p)) {
+                return positionType;
+            }
+        }
+        return DEFAULT_CHAR;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -709,4 +802,5 @@ public class Board implements Vertex {
                 "basePosition=" + basePosition +
                 '}';
     }
+
 }
