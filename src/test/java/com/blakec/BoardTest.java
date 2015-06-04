@@ -101,7 +101,7 @@ public class BoardTest {
             Position po = (Position) v;
             moves.add(po);
         }
-        boolean isValid = Board.isValidSetOfMoves(moves);
+        boolean isValid = knightBoard.isValidSetOfMoves(moves);
         assertTrue(isValid);
     }
 
@@ -142,13 +142,13 @@ public class BoardTest {
                         "................................";
 
         Board knightBoard = new Board(board);
-        Path p = knightBoard.computeLongestPath(new Position(4, 20), new Position(20, 4));
+        Path p = knightBoard.computeLongestPath(new Position(4, 20), new Position(21, 4));
         List<Position> moves = Lists.newArrayList();
         for (Vertex v : p.getPath()) {
             Position po = (Position) v;
             moves.add(po);
         }
-        boolean isValid = Board.isValidSetOfMoves(moves);
+        boolean isValid = knightBoard.isValidSetOfMoves(moves);
         assertTrue(isValid);
     }
 

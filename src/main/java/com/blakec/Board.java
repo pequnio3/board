@@ -127,7 +127,7 @@ public class Board implements Vertex {
                 throw new IOException("The input string has rows with unequal lengths.");
             }
             for (int c = 0; c < row.length(); c++) {
-                final Position p = new Position(r, c);
+                final Position p = getBasePosition().add(new Position(r, c));
                 final char positionType = row.charAt(c);
                 if (characterToSpecialPosition.containsKey(positionType)) {
                     characterToSpecialPosition.get(positionType).add(p);
@@ -213,7 +213,7 @@ public class Board implements Vertex {
         Board curBoard = (Board) boardPath.remove(0);
         // get the starting position on this board
         // first board this will be the global start position
-        Position curStartPosition = getSubBoardPosition(start);
+        Position curStartPosition = start;
         Position curEndPosition;
         for (final Vertex nextVertex : boardPath) {
             // iterate through the sub boards
@@ -225,9 +225,7 @@ public class Board implements Vertex {
             //compute the longest path on this sub board from the entrance position to the exit position
             final Path longestPathInSubBoard = curBoard.computeLongestPathBruteForce(curStartPosition, curEndPosition);
             // add these positions to the longest path
-            for (Vertex v : longestPathInSubBoard.getPath()) {
-                longestPath.add(curBoard.getBasePosition().add((Position) v));
-            }
+            longestPath.addAll(longestPathInSubBoard.getPath());
             // compute the position that the next board will start at based on coming from
             // the current board
             curStartPosition = computeLinkPosition(curBoard, nextBoard, curStartPosition, false);
@@ -235,12 +233,9 @@ public class Board implements Vertex {
         }
 
         // get the position within the sub board that end is.
-        curEndPosition = getSubBoardPosition(end);
+        curEndPosition = end;
         final Path longestPathInEndSubBoard = curBoard.computeLongestPathBruteForce(curStartPosition, curEndPosition);
-        for (Vertex v : longestPathInEndSubBoard.getPath()) {
-            longestPath.add(curBoard.getBasePosition().add((Position) v));
-        }
-
+        longestPath.addAll(longestPathInEndSubBoard.getPath());
         return new Path(longestPath, longestPath.size() - 1);
     }
 
@@ -277,58 +272,53 @@ public class Board implements Vertex {
         if (rowDirection == -1 && colDirection == 0) {
             // -1 0 - NORTH
             // if start is white, end on a black
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(0, 5) : new Position(0, 4);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.LEFT_UP));
+            final Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(0, 5) : new Position(0, 4);
+            final Position prevLink = prev.getBasePosition().add(localPrevLink);
+            final Position nextLink = moveDirection(prevLink, Movement.LEFT_UP);
             return gettingPrevPosition ? prevLink : nextLink;
         } else if (rowDirection == -1 && colDirection == 1) {
             // -1 1 - NORTH EAST
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(0, 7) : new Position(1, 7);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.UP_RIGHT));
+            final Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(0, 7) : new Position(1, 7);
+            final Position prevLink = prev.getBasePosition().add(localPrevLink);
+            final Position nextLink = moveDirection(prevLink, Movement.UP_RIGHT);
             return gettingPrevPosition ? prevLink : nextLink;
         } else if (rowDirection == 0 && colDirection == 1) {
             //  0 1 - EAST
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(4, 7) : new Position(5, 7);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_RIGHT));
+            final Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(4, 7) : new Position(5, 7);
+            final Position prevLink = prev.getBasePosition().add(localPrevLink);
+            final Position nextLink = moveDirection(prevLink, Movement.DOWN_RIGHT);
             return gettingPrevPosition ? prevLink : nextLink;
         } else if (rowDirection == 1 && colDirection == 1) {
             //  1 1 - SOUTH EAST
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(6, 7) : new Position(7, 7);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_RIGHT));
+            final Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(6, 7) : new Position(7, 7);
+            final Position prevLink = prev.getBasePosition().add(localPrevLink);
+            final Position nextLink = moveDirection(prevLink, Movement.DOWN_RIGHT);
             return gettingPrevPosition ? prevLink : nextLink;
         } else if (rowDirection == 1 && colDirection == 0) {
             //  1 0 - SOUTH
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(7, 4) : new Position(7, 5);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.RIGHT_DOWN));
+            final Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(7, 4) : new Position(7, 5);
+            final Position prevLink = prev.getBasePosition().add(localPrevLink);
+            final Position nextLink = moveDirection(prevLink, Movement.RIGHT_DOWN);
             return gettingPrevPosition ? prevLink : nextLink;
         } else if (rowDirection == 1 && colDirection == -1) {
             //  1 -1 - SOUTH WEST
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(7, 0) : new Position(6, 0);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_LEFT));
+            final Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(7, 0) : new Position(6, 0);
+            final Position prevLink = prev.getBasePosition().add(localPrevLink);
+            final Position nextLink = moveDirection(prevLink, Movement.DOWN_LEFT);
             return gettingPrevPosition ? prevLink : nextLink;
         } else if (rowDirection == 0 && colDirection == -1) {
             //  0 -1 - WEST
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(5, 0) : new Position(4, 0);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.DOWN_LEFT));
+            final Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(5, 0) : new Position(4, 0);
+            final Position prevLink = prev.getBasePosition().add(localPrevLink);
+            final Position nextLink = moveDirection(prevLink, Movement.DOWN_LEFT);
             return gettingPrevPosition ? prevLink : nextLink;
         } else {
             //  0 -1 - NORTH WEST
-            Position prevLink = isPositionWhite(prevStartPosition) ? new Position(1, 0) : new Position(0, 0);
-            Position nextLink = getSubBoardPosition(moveDirection(prevLink, Movement.UP_LEFT));
+            Position localPrevLink = isPositionWhite(prevStartPosition) ? new Position(1, 0) : new Position(0, 0);
+            Position prevLink = prev.getBasePosition().add(localPrevLink);
+            Position nextLink = moveDirection(prevLink, Movement.UP_LEFT);
             return gettingPrevPosition ? prevLink : nextLink;
         }
-
-    }
-
-    /**
-     * Returns the subboard that this position resides in.
-     *
-     * @param p position.
-     * @return subboard that this position resides in.
-     */
-    protected Position getSubBoardPosition(final Position p) {
-        return new Position(
-                p.getR() < 0 ? (SUB_BOARD_SIZE + p.getR()) % SUB_BOARD_SIZE : p.getR() % SUB_BOARD_SIZE,
-                p.getC() < 0 ? (SUB_BOARD_SIZE + p.getC()) % SUB_BOARD_SIZE : p.getC() % SUB_BOARD_SIZE);
     }
 
     /**
@@ -472,8 +462,8 @@ public class Board implements Vertex {
         final Graph graph = new Graph();
         for (int r = 0; r < height; r++) {
             for (int c = 0; c < width; c++) {
-                final Position position = new Position(r, c);
-                if(!isValidPosition(position)){
+                final Position position = getBasePosition().add(new Position(r, c));
+                if (!isValidPosition(position)) {
                     // this is not a valid position (probably a rock or barrier)
                     // and should not be included in our graph.
                     continue;
@@ -668,10 +658,10 @@ public class Board implements Vertex {
      * @return true if the position is valid, false otherwise.
      */
     protected boolean isValidPosition(final Position p) {
-        if (p.getC() < 0 || p.getC() >= width) {
+        if (p.getC() < getBasePosition().getC() || p.getC() >= getBasePosition().getC() + width) {
             return false;
         }
-        if (p.getR() < 0 || p.getR() >= height) {
+        if (p.getR() < getBasePosition().getR() || p.getR() >= getBasePosition().getR() + height) {
             return false;
         }
         if (barriers.contains(p)) {
