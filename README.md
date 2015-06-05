@@ -12,7 +12,7 @@ Also , tests displaying completeness of each level are located in src/test/com/b
 
 ## Level 1 - Validate and print path
 
-### Implementation:
+### Implementation
 
 A Postion represents a (row, column) location on a board.
 A Board knows its width and height as well as maintains sets of special positions.  I.e. positions such as water, lava.. etc
