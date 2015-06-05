@@ -585,15 +585,14 @@ public class Board implements Vertex {
             // if you are moving from a teleporter to another teleporter this is a valid move.
             return true;
         }
-        int dRow = Math.abs(end.getR() - start.getR());
-        int dCol = Math.abs(end.getC() - start.getC());
+        int dRow = end.getR() - start.getR();
+        int dCol = end.getC() - start.getC();
         // true if the pure movement is in the L shape.
-        boolean legalMovement = (dRow == LONG_MOVE_DISTANCE && dCol == SHORT_MOVE_DISTANCE) || (dRow == SHORT_MOVE_DISTANCE && dCol == LONG_MOVE_DISTANCE);
-
         Movement movement = null;
         for (Movement m : Movement.values()) {
             if (m.dRows == dRow && m.dColumns == dCol) {
                 movement = m;
+                break;
             }
         }
         if (movement == null) {
@@ -603,7 +602,7 @@ public class Board implements Vertex {
         boolean moveHitsBarrier = doesMoveHitBarrier(start, movement);
         boolean isValidStartPosition = isValidPosition(start);
         boolean isValidEndPosition = isValidPosition(end);
-        return legalMovement && !moveHitsBarrier && isValidEndPosition && isValidStartPosition;
+        return !moveHitsBarrier && isValidEndPosition && isValidStartPosition;
     }
 
     /**
@@ -659,20 +658,24 @@ public class Board implements Vertex {
      * @return true if move hits a barrier.
      */
     protected boolean doesMoveHitBarrier(final Position start, final Movement d) {
-        final Set positionPath = Sets.newHashSet();
+        // positions that are in the path of this L movement
+        final Set<Position> positionPath = Sets.newHashSet();
 
+        //TODO(blakec) decompose this as it is repeated below... coming up with a name for this is hard, though
         final int firstMoveDistance = d.moveRowsFirst ? d.dRows : d.dColumns;
-        for (int i = 1; i <= firstMoveDistance; i++) {
-            int r = d.moveRowsFirst ? start.getR() + i : start.getR();
-            int c = d.moveRowsFirst ? start.getC() : start.getC() + i;
+        final int firstMoveSign = firstMoveDistance >= 0 ? 1 : -1;
+        for (int i = 1; i <= Math.abs(firstMoveDistance); i++) {
+            int r = d.moveRowsFirst ? start.getR() + firstMoveSign * i : start.getR();
+            int c = d.moveRowsFirst ? start.getC() : start.getC() + firstMoveSign * i;
             final Position newPos = new Position(r, c);
             positionPath.add(newPos);
         }
 
         final int secondMoveDistance = d.moveRowsFirst ? d.dColumns : d.dRows;
-        for (int i = 1; i <= secondMoveDistance; i++) {
-            int r = d.moveRowsFirst ? start.getR() : start.getR() + i;
-            int c = d.moveRowsFirst ? start.getC() + i : start.getC();
+        final int secondMoveSign = secondMoveDistance >= 0 ? 1 : -1;
+        for (int i = 1; i <= Math.abs(secondMoveDistance); i++) {
+            int r = d.moveRowsFirst ? start.getR() : start.getR() + i * secondMoveSign;
+            int c = d.moveRowsFirst ? start.getC() + i * secondMoveSign : start.getC();
             final Position newPos = new Position(r, c);
             positionPath.add(newPos);
         }

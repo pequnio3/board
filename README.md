@@ -3,7 +3,7 @@
 
 This project is built with maven on JDK 8.  If you have maven installed, run:
 
-`mvn clean install`
+`mvn clean package`
 
 This is best viewed through an IDE such as Intellij.  This will allow you to explore the code easily and run the tests.   If you would like to have an executable or some other means to display the levels please let me know.
 
@@ -127,7 +127,8 @@ Below is a visualization of how this special case of the the algorithm would wor
 
 #### Future Work
 
-THe DFS cant take too long in certain circumstances.  The paper https://larc.unt.edu/ian/pubs/algoknight.pdf mentions a similar divide and conquor strategy though it appears as though when touring through blocks, they have single preplanned tours that make joining the blocks simple.  To make my algorithm faster, I have a set of precomputed paths for transitioning from one sub-board to another.  This way the majority of the sub-boards are already computed and computation only needs to take place on the start and end boards.
+- The DFS cant take too long in certain circumstances.  Perhaps there is a faster way to figure out the longest path on an 8x8.
+- The paper https://larc.unt.edu/ian/pubs/algoknight.pdf mentions a similar divide and conquor strategy though it appears as though when touring through blocks, they have single preplanned tours that make joining the blocks simple.  To make my algorithm faster, I have a set of precomputed paths for transitioning from one sub-board to another.  This way the majority of the sub-boards are already computed and computation only needs to take place on the start and end boards.
 
 
 #### Code Location

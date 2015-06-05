@@ -7,13 +7,81 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Created by blakec on 6/2/15.
  */
 public class BoardTest {
+
+    @Test
+    public void testIsValidPosition_valid() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position p = new Position(13, 13);
+        assertTrue(knightBoard.isValidPosition(p));
+    }
+
+    @Test
+    public void testIsValidPosition_invalid_offBoard() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position p = new Position(35, 23);
+        assertFalse(knightBoard.isValidPosition(p));
+    }
+
+    @Test
+    public void testIsValidPosition_invalid_rock() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position p = new Position(24, 18);
+        assertFalse(knightBoard.isValidPosition(p));
+    }
+
+    @Test
+    public void testIsValidMove_valid() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position start = new Position(13, 10);
+        Position end = new Position(11, 9);
+        assertTrue(knightBoard.isValidMove(start, end));
+    }
+
+    @Test
+    public void testIsValidMove_valid_teleport() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position start = new Position(11, 26);
+        Position end = new Position(23, 27);
+        assertTrue(knightBoard.isValidMove(start, end));
+    }
+
+    @Test
+    public void testIsValidMove_invalid_barrier() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position start = new Position(10, 15);
+        Position end = Board.moveDirection(start, Board.Movement.UP_LEFT);
+        assertFalse(knightBoard.isValidMove(start, end));
+    }
+
+    @Test
+    public void testComputeCostOfMove_toWater() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position end = new Position(12, 9);
+        Position start = Board.moveDirection(end, Board.Movement.DOWN_LEFT);
+        assertEquals(Board.WATER_COST, knightBoard.computeCostOfMove(start, end),0.0001);
+    }
+
+    @Test
+    public void testComputeCostOfMove_toLava() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position end = new Position(5, 15);
+        Position start = Board.moveDirection(end, Board.Movement.DOWN_LEFT);
+        assertEquals(Board.LAVA_COST, knightBoard.computeCostOfMove(start, end),0.0001);
+    }
+    @Test
+    public void testComputeCostOfMove_toTeleporter_fromTeleporter() throws IOException {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Position start = new Position(11,26);
+        Position end = new Position(23, 27);
+        assertEquals(Board.TELEPORTER_COST, knightBoard.computeCostOfMove(start, end),0.0001);
+    }
+
     @Test
     public void testShortestPath_basicBoard() throws Exception {
         Board knightBoard = loadBoardFromFile(BoardLoader.SIMPLE_BOARD_8x8);
