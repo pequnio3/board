@@ -6,10 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Graph class that has weighted directed edges.
@@ -27,17 +24,31 @@ public class Graph {
      ********** CREATION *********
      *****************************/
 
-    public boolean hasEdge(final Vertex v, final Vertex u, final long weight) {
-        if (!graph.containsKey(v)) {
-            return false;
+    /**
+     * Remove the vertex from the graph and remove all edges pointing to the vertex.
+     *
+     * @param v vertex to be removed
+     */
+    public void removeVertex(final Vertex v) {
+        graph.remove(v);
+        for (final Set<Edge> neighbors : graph.values()) {
+            final Iterator<Edge> neighborIt = neighbors.iterator();
+            while (neighborIt.hasNext()) {
+                final Edge neighbor = neighborIt.next();
+                if (v.equals(neighbor.getTarget())) {
+                    neighborIt.remove();
+                }
+            }
         }
-        final Edge e = new Edge(u, weight);
-        if (graph.get(v) != null && graph.get(v).contains(e)) {
-            return true;
-        }
-        return false;
     }
 
+    /**
+     * Add an edge from start to end with weight.
+     *
+     * @param start  start vertex.
+     * @param end    end vertex.
+     * @param weight weight.
+     */
     public void addEdge(final Vertex start, final Vertex end, final double weight) {
         final Set<Edge> edges = graph.containsKey(start) ?
                 graph.get(start) :
@@ -49,10 +60,15 @@ public class Graph {
         }
     }
 
+    /**
+     * Gets all the edges going out of v.
+     *
+     * @param v vertex.
+     * @return set of edges going out of v.
+     */
     public Set<Edge> getEdges(final Vertex v) {
         return graph.get(v);
     }
-
 
     /**********************************
      ********** LONGEST PATH *********
@@ -189,7 +205,6 @@ public class Graph {
     /**********************************
      ********** SHORTEST PATH *********
      **********************************/
-
 
     /**
      * Computes the shortest path from source to target using Dijkstra's algorithm.  Uses a

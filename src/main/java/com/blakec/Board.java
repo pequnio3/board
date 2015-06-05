@@ -172,6 +172,10 @@ public class Board implements Vertex {
         if (width % 8 != 0 || height % 8 != 0) {
             throw new Exception("The board must have width and height be multiples of eight or the longest path is too slow.");
         }
+        if (width == 8 && height == 8) {
+            // just an 8x8 board, no need for sub-boards
+            return computeLongestPathBruteForce(start, end);
+        }
 
         /*
          * take starting position
@@ -182,19 +186,28 @@ public class Board implements Vertex {
          * by final sub graph
          */
 
-        // create a graph of all the sub boards of this board.
-        // this results in a graph where each node represents a sub board and that node is connected
-        // by edges to other nodes that contain adjacent (diagonal included) sub graphs
-        final Graph graph = generateSubBoardGraph();
+        // subboard that the starting position is in
+        final Board startBoard = getSubBoard(start);
+        // subboard that the end position is in
+        final Board endBoard = getSubBoard(end);
+
         // number of rows of sub boards
         int numRowsOfSubBoards = height / SUB_BOARD_SIZE;
         // number of columns of sub rows
         int numColsOfSubBoards = width / SUB_BOARD_SIZE;
 
-        // subboard that the starting position is in
-        final Board startBoard = getSubBoard(start);
-        // subboard that the end position is in
-        final Board endBoard = getSubBoard(end);
+        if (start.equals(end)) {
+            // start and end are in the same board
+
+            final Board closestBoardToStart = chooseClosestSubBoardToStart(start)
+
+        }
+
+        // create a graph of all the sub boards of this board.
+        // this results in a graph where each node represents a sub board and that node is connected
+        // by edges to other nodes that contain adjacent (diagonal included) sub graphs
+        final Graph graph = generateSubBoardGraph();
+
         // compute the longest path from the starting board to the endboard
         // this path will end up running throguh all other sub boards.
         Path path = graph.computeLongestPath(startBoard, endBoard, numRowsOfSubBoards * numColsOfSubBoards);
@@ -237,6 +250,23 @@ public class Board implements Vertex {
         final Path longestPathInEndSubBoard = curBoard.computeLongestPathBruteForce(curStartPosition, curEndPosition);
         longestPath.addAll(longestPathInEndSubBoard.getPath());
         return new Path(longestPath, longestPath.size() - 1);
+    }
+
+    protected Board chooseClosestSubBoardToStart(Board startBoard, Position start) {
+        // take start position
+        // find shortest way to get out of board.
+
+        // make moves until it is out of the board
+        //
+        // number of rows of sub boards
+        int numRowsOfSubBoards = height / SUB_BOARD_SIZE;
+        // number of columns of sub rows
+        int numColsOfSubBoards = width / SUB_BOARD_SIZE;
+        final Set<Board> neighborBoards = generateNeighborSubBoards(startBoard.getBasePosition().getR() / SUB_BOARD_SIZE,
+                startBoard.getBasePosition().getC() / SUB_BOARD_SIZE,
+                numRowsOfSubBoards,
+                numColsOfSubBoards);
+
     }
 
     /**
@@ -367,11 +397,11 @@ public class Board implements Vertex {
      * @param numColsOfSubBoards number of columns of sub boards in the large board.
      * @return a set of sub boards that are neighbors of this board.
      */
-    protected Set generateNeighborSubBoards(final int r,
-                                            final int c,
-                                            final int numRowsOfSubBoards,
-                                            final int numColsOfSubBoards) {
-        final Set subBoards = Sets.newHashSet();
+    protected Set<Board> generateNeighborSubBoards(final int r,
+                                                   final int c,
+                                                   final int numRowsOfSubBoards,
+                                                   final int numColsOfSubBoards) {
+        final Set<Board> subBoards = Sets.newHashSet();
         for (int dr = -1; dr <= 1; dr++) {
             for (int dc = -1; dc <= 1; dc++) {
                 if (dr == 0 && dc == 0) {
@@ -623,8 +653,8 @@ public class Board implements Vertex {
      * @param p position.
      * @return all valid moves a knight can make from that position.
      */
-    protected Set generatePossibleKnightMoves(final Position p) {
-        final Set possibleMoves = Sets.newHashSet();
+    protected Set<Position> generatePossibleKnightMoves(final Position p) {
+        final Set<Position> possibleMoves = Sets.newHashSet();
         for (Movement d : Movement.values()) {
             final Position possiblePosition = moveDirection(p, d);
             if (isValidMove(p, possiblePosition)) {
@@ -659,7 +689,7 @@ public class Board implements Vertex {
      * @return true if move hits a barrier.
      */
     protected boolean doesMoveHitBarrier(final Position start, final Movement d) {
-        final Set positionPath = Sets.newHashSet();
+        final Set<Position> positionPath = Sets.newHashSet();
 
         final int firstMoveDistance = d.moveRowsFirst ? d.dRows : d.dColumns;
         for (int i = 1; i <= firstMoveDistance; i++) {
