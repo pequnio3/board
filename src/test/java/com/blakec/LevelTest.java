@@ -77,7 +77,7 @@ public class LevelTest {
     public void test_level_5() throws Exception {
         final Board board = boardLoader.loadBoardFromFile(BoardLoader.SIMPLE_BOARD_32x32);
         final Position start = new Position(0, 0);
-        final Position end = new Position(0, 17);
+        final Position end = new Position(10, 17);
         final Path p = board.computeLongestPath(start, end);
         assertEquals(1024, p.getPath().size());
         assertEquals(1023, p.getWeight(), 0.000001);

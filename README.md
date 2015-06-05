@@ -1,7 +1,11 @@
 
 # How to run
 
-Please make sure you have JDK 8 installed on your machine as that was the version used to develop the code.  Best viewed through an IDE such as Intellij.  This will allow you to explore the code easily and run the tests.   If you would like to have an executable or some other means to display the levels please let me know.
+This project is built with maven on JDK 8.  If you have maven installed, run:
+
+`mvn clean install`
+
+This is best viewed through an IDE such as Intellij.  This will allow you to explore the code easily and run the tests.   If you would like to have an executable or some other means to display the levels please let me know.
 
 
 # Levels

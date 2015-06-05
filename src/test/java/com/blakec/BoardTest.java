@@ -60,10 +60,9 @@ public class BoardTest {
     public void testShortestPath_special_32x32_special_deep() throws Exception {
         Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
         Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(0, 31));
-        assertTrue(knightBoard.isValidSetOfMoves(p, true));
+        assertTrue(knightBoard.isValidSetOfMoves(p));
         assertEquals(28, p.getPath().size());
         assertEquals(27.0, p.getWeight(), 0.0001);
-
     }
 
     @Test
