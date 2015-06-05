@@ -21,9 +21,14 @@ public class GraphTest {
         graph = new Graph();
     }
 
+    /**
+     * Test the shortest path graph algorithm on a simple graph.
+     *
+     * @throws Exception
+     */
     @Test
-    public void test_simple() throws Exception {
-        Vertex v0 =new Position(0, 0);
+    public void testShortestPath_simple() throws Exception {
+        Vertex v0 = new Position(0, 0);
         Vertex v1 = new Position(1, 1);
         Vertex v2 = new Position(2, 2);
         Vertex v3 = new Position(3, 3);
@@ -53,8 +58,13 @@ public class GraphTest {
         assertEquals(correct, p);
     }
 
+    /**
+     * No solution for this shortest path.
+     *
+     * @throws Exception
+     */
     @Test
-    public void test_simple_noSolution() throws Exception {
+    public void testShortestPath_simple_noSolution() throws Exception {
         Vertex v0 = new Position(0, 0);
         Vertex v1 = new Position(1, 1);
         Vertex v2 = new Position(2, 2);
@@ -86,6 +96,11 @@ public class GraphTest {
         assertEquals(correct, p);
     }
 
+    /**
+     * Test that neighbors are sorted appropriately according to Warnsdorf's rule.
+     *
+     * @throws Exception
+     */
     @Test
     public void test_sortingNeighbors() throws Exception {
         Vertex v0 = new Position(0, 0);
@@ -94,8 +109,6 @@ public class GraphTest {
         Vertex v3 = new Position(3, 3);
         Vertex v4 = new Position(4, 4);
         Vertex v5 = new Position(5, 5);
-        Vertex v6 = new Position(6, 6);
-        Vertex v7 = new Position(7, 7);
         final Graph graph = new Graph();
         graph.addEdge(v0, v1, 80);
         graph.addEdge(v0, v2, 82);
@@ -104,9 +117,8 @@ public class GraphTest {
         graph.addEdge(v2, v4, 40);
         graph.addEdge(v2, v0, 40);
 
-
         List<Edge> e = graph.getNeighborsSortedByFewestNeighbors(v2, Sets.<Vertex>newHashSet());
-        Path correct = new Path(Lists.<Vertex>newArrayList(), Graph.POSITIVE_INFINITY);
-
+        List<Edge> correct = Lists.newArrayList(new Edge(v4, 40), new Edge(v0, 40));
+        assertEquals(correct, e);
     }
 }

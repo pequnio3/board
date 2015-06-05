@@ -55,7 +55,7 @@ public class Board implements Vertex {
 
     final static char ROCK_CHAR = 'R';
     final static char BARRIER_CHAR = 'B';
-    final static char KNIGHT_CHAR = 'B';
+    final static char KNIGHT_CHAR = 'K';
 
     /**
      * Position of the boards origin.  For most boards this is (0,0).  However when finding longest path
@@ -542,6 +542,30 @@ public class Board implements Vertex {
     /**
      * Determines whether the input list of positions is a valid set of moves for a knight.
      *
+     * @param path path
+     * @return true if the list of moves are possible by a single knight. false otherwise.
+     */
+    public boolean isValidSetOfMoves(final Path path, boolean printPath) {
+        final List<Position> moves = Lists.newArrayList();
+        for (Vertex v : path.getPath()) {
+            moves.add((Position) v);
+        }
+        return isValidSetOfMoves(moves, printPath);
+    }
+
+    /**
+     * Determines whether the input list of positions is a valid set of moves for a knight.
+     *
+     * @param path path
+     * @return true if the list of moves are possible by a single knight. false otherwise.
+     */
+    public boolean isValidSetOfMoves(final Path path) {
+        return isValidSetOfMoves(path, false);
+    }
+
+    /**
+     * Determines whether the input list of positions is a valid set of moves for a knight.
+     *
      * @param moves list of moves.
      * @return true if the list of moves are possible by a single knight. false otherwise.
      */
@@ -557,6 +581,10 @@ public class Board implements Vertex {
      * @return
      */
     protected boolean isValidMove(final Position start, final Position end) {
+        if (teleporters.contains(start) && teleporters.contains(end)) {
+            // if you are moving from a teleporter to another teleporter this is a valid move.
+            return true;
+        }
         int dRow = Math.abs(end.getR() - start.getR());
         int dCol = Math.abs(end.getC() - start.getC());
         // true if the pure movement is in the L shape.

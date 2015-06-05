@@ -99,12 +99,16 @@ To solve this we can change the start position to an adjacent board.  We do this
 
 *** I'm not quite sure whether this is perfect correctness as its unclear a knight can jump to all the remaining positions in an 8x8 board if some are removed. However I figured this would be an appropriate way to inch my solution closer to optimal.  ***
 
+-- Future Optimizations --
+
+THe DFS cant take too long in certain circumstances.  The paper https://larc.unt.edu/ian/pubs/algoknight.pdf mentions a similar divide and conquor strategy though it appears as though when touring through blocks, they have single preplanned tours that make joining the blocks simple.  To make my algorithm faster, I have a set of precomputed paths for transitioning from one sub-board to another.  This way the majority of the sub-boards are already computed and computation only needs to take place on the start and end boards.
+
+
 -- Code Location --
 
 Board::computeLongestPath
 Board::computeLongestPathBruteForce
 Board::computeLinkPosition
-Board::getSubBoardPosition
 Board::generateSubBoardGraph
 Board::generateNeighborSubBoards
 Graph::computeLongestPath

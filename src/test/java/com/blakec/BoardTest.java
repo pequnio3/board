@@ -1,231 +1,106 @@
 package com.blakec;
 
 import com.blakec.graph.Path;
-import com.blakec.graph.Vertex;
-import com.google.common.collect.Lists;
 import org.junit.Test;
 
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Created by blakec on 6/2/15.
  */
 public class BoardTest {
-
     @Test
-    public void test_basicBoard() throws Exception {
-        final String board =
-                "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........";
-
-        Board knightBoard = new Board(board);
+    public void testShortestPath_basicBoard() throws Exception {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SIMPLE_BOARD_8x8);
         Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(7, 7));
-        System.out.println(p);
-
+        assertEquals(7, p.getPath().size());
+        assertTrue(knightBoard.isValidSetOfMoves(p));
     }
 
     @Test
-    public void test_basicBoardLongestPath_simple() throws Exception {
-        final String board =
-                "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........";
-
-        Board knightBoard = new Board(board);
-        final long start = System.currentTimeMillis();
-        Path p = knightBoard.computeLongestPathBruteForce(new Position(7, 6), new Position(0, 7));
-        final long end = System.currentTimeMillis();
-        final long a = end - start;
-        System.out.println();
-
+    public void testShortestPath_teleportBoard() throws Exception {
+        Board knightBoard = loadBoardFromFile(BoardLoader.TELEPORT_BOARD_8x8);
+        Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(7, 7));
+        assertEquals(2, p.getPath().size());
+        assertEquals(0.0, p.getWeight(), 0.0001);
+        assertTrue(knightBoard.isValidSetOfMoves(p));
     }
 
     @Test
-    public void test_longestPath_8x8() throws Exception {
-        final String board =
-                "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........";
-
-        Board knightBoard = new Board(board);
-        final long start = System.currentTimeMillis();
-        Path p = knightBoard.computeLongestPath(new Position(6, 7), new Position(0, 4));
-        final long end = System.currentTimeMillis();
-        final long a = end - start;
-        System.out.println();
+    public void testShortestPath_teleportLavaBoardd() throws Exception {
+        Board knightBoard = loadBoardFromFile(BoardLoader.TELEPORTER_LAVA_BOARD_8x8);
+        Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(7, 7));
+        assertEquals(4, p.getPath().size());
+        assertEquals(6.0, p.getWeight(), 0.0001);
+        assertTrue(knightBoard.isValidSetOfMoves(p));
     }
 
     @Test
-    public void test_longestPath_16x8() throws Exception {
-        final String board =
-                "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........\n" +
-                        "........";
-
-        Board knightBoard = new Board(board);
-        final long start = System.currentTimeMillis();
-        Path p = knightBoard.computeLongestPath(new Position(0, 0), new Position(13, 4));
-        List<Position> moves = Lists.newArrayList();
-        for (Vertex v : p.getPath()) {
-            Position po = (Position) v;
-            moves.add(po);
-        }
-        boolean isValid = knightBoard.isValidSetOfMoves(moves);
-        assertTrue(isValid);
+    public void testShortestPath_split_board_8x8_no_path() throws Exception {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPLIT_BOARD_8x8);
+        Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(7, 7));
+        assertTrue(p.getPath().isEmpty());
     }
 
     @Test
-    public void test_longestPath32x32() throws Exception {
-        final String board =
-                "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................";
-
-        Board knightBoard = new Board(board);
-        Path p = knightBoard.computeLongestPath(new Position(4, 20), new Position(21, 4));
-        List<Position> moves = Lists.newArrayList();
-        for (Vertex v : p.getPath()) {
-            Position po = (Position) v;
-            moves.add(po);
-        }
-        boolean isValid = knightBoard.isValidSetOfMoves(moves);
-        assertTrue(isValid);
-    }
-
-    @Test
-    public void test_32x32() throws Exception {
-        final String board =
-                "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................";
-
-        Board knightBoard = new Board(board);
-        Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(20, 23));
-        System.out.println(p);
-    }
-
-    @Test
-    public void test_32x32_special() throws Exception {
-        final String board =
-                "........B...LLL.................\n" +
-                        "........B...LLL.................\n" +
-                        "........B...LLL...LLL...........\n" +
-                        "........B...LLL..LLL...RR.......\n" +
-                        "........B...LLLLLLLL...RR.......\n" +
-                        "........B...LLLLLL..............\n" +
-                        "........B............RR.........\n" +
-                        "........BB...........RR.........\n" +
-                        "........WBB.....................\n" +
-                        "...RR...WWBBBBBBBBBB............\n" +
-                        "...RR...WW.........B............\n" +
-                        "........WW.........B......T.....\n" +
-                        "...WWWWWWW.........B............\n" +
-                        "...WWWWWWW.........B..RR........\n" +
-                        "...WW..........BBBBB..RR.WWWWWWW\n" +
-                        "...WW..........B.........W......\n" +
-                        "WWWW...........B...WWWWWWW......\n" +
-                        "...WWWWWWW.....B............BBBB\n" +
-                        "...WWWWWWW.....BBB..........B...\n" +
-                        "...WWWWWWW.......BWWWWWWBBBBB...\n" +
-                        "...WWWWWWW.......BWWWWWWB.......\n" +
-                        "...........BBB..........BB......\n" +
-                        ".....RR....B.............B......\n" +
-                        ".....RR....B.............B.T....\n" +
-                        "...........B.....RR......B......\n" +
-                        "...........B.....RR.............\n" +
-                        "...........B..........RR........\n" +
-                        "...........B..........RR........\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n" +
-                        "................................\n";
-        Board knightBoard = new Board(board);
+    public void testShortestPath_special_32x32() throws Exception {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
         Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(31, 31));
-        System.out.println(p);
+        assertEquals(23, p.getPath().size());
+        assertEquals(23.0, p.getWeight(), 0.0001);
+        assertTrue(knightBoard.isValidSetOfMoves(p));
+    }
+
+    @Test
+    public void testShortestPath_special_32x32_special_deep() throws Exception {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SPECIAL_BOARD_32x32);
+        Path p = knightBoard.computeShortestPath(new Position(0, 0), new Position(0, 31));
+        assertTrue(knightBoard.isValidSetOfMoves(p, true));
+        assertEquals(28, p.getPath().size());
+        assertEquals(27.0, p.getWeight(), 0.0001);
+
+    }
+
+    @Test
+    public void testLongestPath_simple8x8() throws Exception {
+        Board knightBoard = loadBoardFromFile(BoardLoader.SIMPLE_BOARD_8x8);
+        final long start = System.currentTimeMillis();
+        Path p = knightBoard.computeLongestPathBruteForce(new Position(0, 0), new Position(0, 1));
+        assertEquals(64, p.getPath().size());
+        assertTrue(knightBoard.isValidSetOfMoves(p));
+    }
+
+    @Test
+    public void testLongestPath_simple16x8() throws Exception {
+        final Board knightBoard = loadBoardFromFile(BoardLoader.SIMPLE_BOARD_16x8);
+        Path p = knightBoard.computeLongestPath(new Position(0, 0), new Position(13, 4));
+        assertEquals(128, p.getPath().size());
+        assertTrue(knightBoard.isValidSetOfMoves(p));
+    }
+
+    @Test
+    public void testLongestPath_simple32x32_sameColor() throws Exception {
+        final Board knightBoard = loadBoardFromFile(BoardLoader.SIMPLE_BOARD_32x32);
+        Path p = knightBoard.computeLongestPath(new Position(0, 0), new Position(31, 31));
+        assertEquals(1023, p.getPath().size());
+        assertTrue(knightBoard.isValidSetOfMoves(p));
+    }
+
+    @Test
+    public void testLongestPath_simple32x32_differentColor() throws Exception {
+        final Board knightBoard = loadBoardFromFile(BoardLoader.SIMPLE_BOARD_32x32);
+        Path p = knightBoard.computeLongestPath(new Position(0, 0), new Position(31, 30));
+        assertEquals(1024, p.getPath().size());
+        assertTrue(knightBoard.isValidSetOfMoves(p));
+    }
+
+    protected Board loadBoardFromFile(final String resource) throws IOException {
+        final String board = new String(Files.readAllBytes(Paths.get(this.getClass().getResource(resource).getPath())));
+        return new Board(board);
     }
 }
